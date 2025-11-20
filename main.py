@@ -1,6 +1,5 @@
 import argparse
 import os
-# import sys
 
 from dotenv import load_dotenv
 from google import genai
@@ -25,7 +24,7 @@ def main():
         types.Content(role="user", parts=[types.Part(text=user_prompt)]),
     ]
 
-    response = client.models.generate_content(  # pyright: ignore[reportUnknownMemberType]
+    response = client.models.generate_content(
         model="gemini-2.0-flash-001",
         contents=messages,
     )
@@ -33,8 +32,8 @@ def main():
     print(response.text)
     if args.verbose:
         print(f"User prompt: {user_prompt}")
-        print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")  # pyright: ignore[reportOptionalMemberAccess]
-        print(f"Response tokens: {response.usage_metadata.candidates_token_count}")  # pyright: ignore[reportOptionalMemberAccess]
+        print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
+        print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
 
 
 if __name__ == "__main__":

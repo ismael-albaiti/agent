@@ -19,8 +19,8 @@ def get_file_content(working_directory: StrPath, file_path: StrPath):
         if not os.path.isfile(current_abspath):
             return f'Error: File not found or is not a regular file: "{file_path}"'
 
-        with open(current_abspath, "r") as file:
-            file_content_string = file.read(MAX_CHARS)
+        with open(current_abspath, "r") as stream:
+            file_content_string = stream.read(MAX_CHARS)
 
         if os.path.getsize(current_abspath) > MAX_CHARS:
             file_content_string += (

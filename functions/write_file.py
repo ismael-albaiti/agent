@@ -1,6 +1,26 @@
 import os
 
 from dotenv.main import StrPath
+from google.genai import types
+
+
+schema_write_file = types.FunctionDeclaration(
+    name="write_file",
+    description="write content to a file and save it",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "file_path": types.Schema(
+                type=types.Type.STRING,
+                description="the file to create and write to",
+            ),
+            "content": types.Schema(
+                type=types.Type.STRING,
+                description="the content to write into the file",
+            ),
+        },
+    ),
+)
 
 
 def write_file(working_directory: StrPath, file_path: StrPath, content: str) -> str:

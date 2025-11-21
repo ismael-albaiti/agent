@@ -1,8 +1,23 @@
 import os
 
 from dotenv.main import StrPath
+from google.genai import types
 
 from config import MAX_CHARS
+
+schema_get_file_content = types.FunctionDeclaration(
+    name="get_file_content",
+    description="get the content of a file",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "file_path": types.Schema(
+                type=types.Type.STRING,
+                description="the file to read from",
+            ),
+        },
+    ),
+)
 
 
 def get_file_content(working_directory: StrPath, file_path: StrPath):

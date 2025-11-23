@@ -1,11 +1,13 @@
 import argparse
 import os
+import sys
 
 from dotenv import load_dotenv
 from google import genai
 from google.genai import Client, types
 
 from call_function import available_functions, call_function
+from config import MAX_ITERATIONS
 from prompts import system_prompt
 
 
@@ -30,7 +32,9 @@ def main():
     client = genai.Client(api_key=api_key)
 
     user_prompt: str = args.message
-    if args.verbose:
+    verbose: bool = args.verbose
+
+    if verbose:
         print(f"User prompt: {user_prompt}")
 
     messages = [
@@ -42,11 +46,24 @@ def main():
         ),
     ]
 
-    generate_content(client, messages, args.verbose)
+    for i in range(MAX_ITERATIONS):
+        try:
+            final_response = generate_content(client, messages, verbose)
+            if final_response:
+                print("Final response:")
+                print(final_response)
+                sys.exit(0)
+                # break
+        except Exception as e:
+            print(f"Error in generate_content: {e}")
+
+    print(f"Maximum iterations ({MAX_ITERATIONS}) reached.")
+    sys.exit(1)
 
 
 def generate_content(client: Client, messages: list[types.Content], verbose: bool):
     model = "gemini-2.0-flash-001"
+
     response = client.models.generate_content(
         model=model,
         contents=messages,
@@ -60,11 +77,16 @@ def generate_content(client: Client, messages: list[types.Content], verbose: boo
         print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
         print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
 
+    if response.candidates:
+        for candidate in response.candidates:
+            if candidate.content:
+                messages.append(candidate.content)
+
     if not response.function_calls:
         return response.text
 
+    responses: list[types.Part] = []
     for function_call_part in response.function_calls:
-        responses = []
         function_call_result = call_function(function_call_part, verbose)
         if (
             not function_call_result.parts
@@ -76,68 +98,16 @@ def generate_content(client: Client, messages: list[types.Content], verbose: boo
             print(f"-> {function_call_result.parts[0].function_response.response}")
         responses.append(function_call_result.parts[0])
 
-        if not responses:
-            raise Exception("no function responses generated, exiting.")
+    if not responses:
+        raise Exception("no function responses generated, exiting.")
 
+    messages.append(
+        types.Content(
+            role="user",
+            parts=responses,
+        ),
+    )
 
-# def call_function(function_call_part: types.FunctionCall, verbose=False):
-#     function_name = function_call_part.name
-#     if not function_name:
-#         return types.Content(
-#             role="tool",
-#             parts=[
-#                 types.Part.from_function_response(
-#                     name="None",
-#                     response={"error": "function name was not provided"},
-#                 )
-#             ],
-#         )
-#
-#     function_arguments = function_call_part.args
-#     if not function_arguments:
-#         return types.Content(
-#             role="tool",
-#             parts=[
-#                 types.Part.from_function_response(
-#                     name="None",
-#                     response={"error": "function arguments was not provided"},
-#                 )
-#             ],
-#         )
-#
-#     if verbose:
-#         print(f"Calling function: {function_name}({function_arguments})")
-#     print(f" - Calling function: {function_name}")
-#
-#     functions: dict[str, FunctionType] = {
-#         "get_file_content": get_file_content,
-#         "get_files_info": get_files_info,
-#         "write_file": write_file,
-#         "run_python_file": run_python_file,
-#     }
-#
-#     if function_name not in functions:
-#         return types.Content(
-#             role="tool",
-#             parts=[
-#                 types.Part.from_function_response(
-#                     name=function_name,
-#                     response={"error": f"Unknown function: {function_name}"},
-#                 )
-#             ],
-#         )
-#
-#     func = functions[function_name]
-#     return types.Content(
-#         role="tool",
-#         parts=[
-#             types.Part.from_function_response(
-#                 name=function_name,
-#                 response={"result": func(WORKING_DIRECTORY, **function_arguments)},
-#             )
-#         ],
-#     )
-#
 
 if __name__ == "__main__":
     main()

@@ -9,4 +9,5 @@ When a user asks a question or makes a request, make a function call plan. You c
 - Write or overwrite files
 
 All paths you provide should be relative to the working directory. You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
+if the users ask about something you dont know like for explaintion maybe its a file/ folder look in the working directory for a file with the same name 
 """
